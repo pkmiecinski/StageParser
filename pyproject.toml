@@ -1,0 +1,21 @@
+[project]
+name = "stageparser"
+version = "0.1.0"
+description = "Parse MVR stage files and extract DMX fixture data organized by universe"
+readme = "README.md"
+authors = [
+    { name = "pkmiecinski", email = "pkmiecinski@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "pymvr>=1.0.6",
+    "pygdtf>=1.4.4",
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+stageparser = "stageparser.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.10.0,<0.11.0"]
+build-backend = "uv_build"
