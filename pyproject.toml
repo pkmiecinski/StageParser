@@ -3,8 +3,19 @@ name = "stageparser"
 version = "0.1.0"
 description = "Parse MVR stage files and extract DMX fixture data organized by universe"
 readme = "README.md"
+license = "MIT"
 authors = [
-    { name = "pkmiecinski", email = "pkmiecinski@gmail.com" }
+    { name = "Piotr Kmiecinski", email = "pkmiecinski@gmail.com" }
+]
+keywords = ["mvr", "gdtf", "dmx", "lighting", "stage", "fixture"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: System :: Hardware",
 ]
 requires-python = ">=3.12"
 dependencies = [
@@ -12,6 +23,11 @@ dependencies = [
     "pygdtf>=1.4.4",
     "pyyaml>=6.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/pkmiecinski/StageParser"
+Repository = "https://github.com/pkmiecinski/StageParser"
+Issues = "https://github.com/pkmiecinski/StageParser/issues"
 
 [project.scripts]
 stageparser = "stageparser.cli:main"
