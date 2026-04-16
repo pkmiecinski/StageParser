@@ -142,6 +142,50 @@ class Stage:
         beams = self.get_beams(universe, address)
         return sum(b.luminous_flux for b in beams)
 
+    # ── DMX patch ─────────────────────────────────────────────────
+
+    def dmx_patch(self, universe: int | None = None) -> list[dict]:
+        """Return a minimal, ordered DMX patch list.
+
+        Each row maps a single DMX address to a fixture and attribute.
+        For 16-bit channels the coarse byte keeps the original attribute
+        name and the fine byte gets a ``_Fine`` suffix.
+
+        Rows are sorted by universe then DMX address.
+
+        Args:
+            universe: If given, only include fixtures from that universe.
+        """
+        rows: list[dict] = []
+        for f in self.list_fixtures(universe):
+            if f.address is None or f.universe is None:
+                continue
+            for ch in f.channels:
+                if len(ch.offset) == 1:
+                    rows.append({
+                        "universe": f.universe,
+                        "dmx_address": f.address + ch.offset[0] - 1,
+                        "attribute": ch.attribute,
+                        "fixture": f.name,
+                    })
+                else:
+                    # 16-bit: first offset = coarse, rest = fine
+                    rows.append({
+                        "universe": f.universe,
+                        "dmx_address": f.address + ch.offset[0] - 1,
+                        "attribute": ch.attribute,
+                        "fixture": f.name,
+                    })
+                    for fine_off in ch.offset[1:]:
+                        rows.append({
+                            "universe": f.universe,
+                            "dmx_address": f.address + fine_off - 1,
+                            "attribute": f"{ch.attribute}_Fine",
+                            "fixture": f.name,
+                        })
+        rows.sort(key=lambda r: (r["universe"], r["dmx_address"]))
+        return rows
+
     # ── Channels table ────────────────────────────────────────────
 
     def channels_table(self, universe: int | None = None) -> list[dict]:

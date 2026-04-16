@@ -1,6 +1,6 @@
 [project]
 name = "stageparser"
-version = "0.2.0"
+version = "0.3.0"
 description = "Parse MVR stage files and extract DMX fixture data organized by universe"
 readme = "README.md"
 license = "MIT"

@@ -66,6 +66,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Output only channel information (flat table).",
     )
     parser.add_argument(
+        "--patch",
+        action="store_true",
+        help="Output minimal DMX patch list ordered by address.",
+    )
+    parser.add_argument(
         "-o", "--output",
         type=Path,
         default=None,
@@ -91,7 +96,16 @@ def main(argv: list[str] | None = None) -> int:
 
     fmt: str = args.format
 
-    if args.channels:
+    if args.patch:
+        rows = stage.dmx_patch(args.universe)
+        if fmt in ("csv", "tsv"):
+            delimiter = "," if fmt == "csv" else "\t"
+            output = _format_dsv(rows, delimiter)
+        elif fmt == "yaml":
+            output = _format_yaml(rows)
+        else:
+            output = _format_json(rows)
+    elif args.channels:
         rows = stage.channels_table(args.universe)
         if fmt in ("csv", "tsv"):
             delimiter = "," if fmt == "csv" else "\t"
@@ -128,7 +142,7 @@ def main(argv: list[str] | None = None) -> int:
             })
     else:
         if fmt in ("csv", "tsv"):
-            print("Error: csv/tsv format requires --channels, --summary, or --universe.", file=sys.stderr)
+            print("Error: csv/tsv format requires --patch, --channels, --summary, or --universe.", file=sys.stderr)
             return 1
         data = stage.to_dict()
         output = _format_json(data) if fmt == "json" else _format_yaml(data)
