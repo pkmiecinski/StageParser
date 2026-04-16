@@ -10,6 +10,7 @@ from stageparser.models import (
     FixtureInfo,
     PhysicalInfo,
     StageData,
+    VideoScreenInfo,
 )
 from stageparser.parser import parse_mvr
 
@@ -37,6 +38,11 @@ class Stage:
     def fixtures(self) -> list[FixtureInfo]:
         """All fixtures in the stage."""
         return self._data.fixtures
+
+    @property
+    def video_screens(self) -> list[VideoScreenInfo]:
+        """All video screens in the stage."""
+        return self._data.video_screens
 
     # ── Universe queries ──────────────────────────────────────────
 
@@ -136,11 +142,41 @@ class Stage:
         beams = self.get_beams(universe, address)
         return sum(b.luminous_flux for b in beams)
 
+    # ── Channels table ────────────────────────────────────────────
+
+    def channels_table(self, universe: int | None = None) -> list[dict]:
+        """Return a flat list of dicts describing every channel.
+
+        Each row contains fixture context (name, manufacturer, model,
+        universe, address) plus the channel's own fields.  Ideal for
+        CSV / TSV export.
+
+        Args:
+            universe: If given, only include fixtures from that universe.
+        """
+        rows: list[dict] = []
+        for f in self.list_fixtures(universe):
+            for ch in f.channels:
+                rows.append({
+                    "fixture_name": f.name,
+                    "manufacturer": f.manufacturer,
+                    "model": f.model,
+                    "universe": f.universe,
+                    "address": f.address,
+                    "offset": ",".join(str(o) for o in ch.offset),
+                    "attribute": ch.attribute,
+                    "geometry": ch.geometry,
+                    "default": ch.default,
+                    "dmx_break": ch.dmx_break,
+                    "bit_depth": 8 * len(ch.offset),
+                })
+        return rows
+
     # ── Summary ───────────────────────────────────────────────────
 
     def summary(self) -> dict:
         """Return a summary dict of the stage."""
-        return {
+        d: dict = {
             "mvr_file": self._data.mvr_file,
             "mvr_version": self._data.mvr_version,
             "provider": self._data.provider,
@@ -158,6 +194,17 @@ class Stage:
                 for f in self._data.fixtures
             ],
         }
+        if self._data.video_screens:
+            d["video_screen_count"] = len(self._data.video_screens)
+            d["video_screens"] = [
+                {
+                    "name": vs.name,
+                    "uuid": vs.uuid,
+                    "sources": [s.to_dict() for s in vs.sources],
+                }
+                for vs in self._data.video_screens
+            ]
+        return d
 
     def to_dict(self) -> dict:
         """Full export as dict (structured by universe)."""

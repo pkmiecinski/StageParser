@@ -6,8 +6,10 @@ from stageparser.models import (
     DmxAddress,
     FixtureInfo,
     PhysicalInfo,
+    SourceInfo,
     StageData,
     Transform,
+    VideoScreenInfo,
 )
 from stageparser.parser import parse_mvr
 from stageparser.api import Stage
@@ -17,6 +19,8 @@ __all__ = [
     "Stage",
     "StageData",
     "FixtureInfo",
+    "VideoScreenInfo",
+    "SourceInfo",
     "ChannelInfo",
     "DmxAddress",
     "Transform",

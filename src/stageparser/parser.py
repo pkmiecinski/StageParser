@@ -18,8 +18,10 @@ from stageparser.models import (
     FixtureInfo,
     ModelDimensions,
     PhysicalInfo,
+    SourceInfo,
     StageData,
     Transform,
+    VideoScreenInfo,
 )
 
 
@@ -157,6 +159,22 @@ def _collect_fixtures(child_list: pymvr.ChildList) -> list[pymvr.Fixture]:
     return fixtures
 
 
+def _collect_video_screens(child_list: pymvr.ChildList) -> list[pymvr.VideoScreen]:
+    """Recursively collect all video screens from an MVR child list."""
+    screens: list[pymvr.VideoScreen] = []
+    if hasattr(child_list, "video_screens"):
+        screens.extend(child_list.video_screens)
+    if hasattr(child_list, "group_objects"):
+        for group in child_list.group_objects:
+            if hasattr(group, "child_list"):
+                screens.extend(_collect_video_screens(group.child_list))
+    if hasattr(child_list, "trusses"):
+        for truss in child_list.trusses:
+            if hasattr(truss, "child_list"):
+                screens.extend(_collect_video_screens(truss.child_list))
+    return screens
+
+
 def parse_mvr(mvr_path: str | Path) -> StageData:
     """Parse an MVR file and return structured stage data.
 
@@ -180,8 +198,10 @@ def parse_mvr(mvr_path: str | Path) -> StageData:
 
     # Collect all fixtures across all layers (recursive)
     all_mvr_fixtures: list[pymvr.Fixture] = []
+    all_mvr_video_screens: list[pymvr.VideoScreen] = []
     for layer in mvr.scene.layers:
         all_mvr_fixtures.extend(_collect_fixtures(layer.child_list))
+        all_mvr_video_screens.extend(_collect_video_screens(layer.child_list))
 
     for fx in all_mvr_fixtures:
         info = FixtureInfo(
@@ -235,5 +255,30 @@ def parse_mvr(mvr_path: str | Path) -> StageData:
             info.physical = _parse_physical(gdtf_ft)
 
         stage.fixtures.append(info)
+
+    for vs in all_mvr_video_screens:
+        vs_info = VideoScreenInfo(
+            name=vs.name or "",
+            uuid=str(vs.uuid) if vs.uuid else "",
+            gdtf_file=unquote(vs.gdtf_spec) if vs.gdtf_spec else "",
+            gdtf_mode=vs.gdtf_mode or "",
+        )
+        if vs.matrix:
+            vs_info.transform = _extract_transform(vs.matrix)
+        if vs.addresses and vs.addresses.addresses:
+            for addr in vs.addresses.addresses:
+                vs_info.addresses.append(DmxAddress(
+                    universe=addr.universe or 0,
+                    address=addr.address or 0,
+                    dmx_break=addr.dmx_break or 0,
+                ))
+        if vs.sources and vs.sources.sources:
+            for src in vs.sources.sources:
+                vs_info.sources.append(SourceInfo(
+                    linked_geometry=src.linked_geometry or "",
+                    type=src.type_ or "",
+                    value=src.value or "",
+                ))
+        stage.video_screens.append(vs_info)
 
     return stage

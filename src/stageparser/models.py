@@ -228,6 +228,66 @@ class FixtureInfo:
 
 
 @dataclass
+class SourceInfo:
+    """A media source attached to a VideoScreen."""
+
+    linked_geometry: str = ""
+    type: str = ""  # e.g. "NDI", "Image", "MediaFile"
+    value: str = ""  # URI, file path, or color value
+
+    def to_dict(self) -> dict[str, Any]:
+        d: dict[str, Any] = {}
+        if self.linked_geometry:
+            d["linked_geometry"] = self.linked_geometry
+        if self.type:
+            d["type"] = self.type
+        if self.value:
+            d["value"] = self.value
+        return d
+
+
+@dataclass
+class VideoScreenInfo:
+    """Info for a VideoScreen element from MVR."""
+
+    name: str = ""
+    uuid: str = ""
+    gdtf_file: str = ""
+    gdtf_mode: str = ""
+    transform: Transform = field(default_factory=Transform)
+    sources: list[SourceInfo] = field(default_factory=list)
+    addresses: list[DmxAddress] = field(default_factory=list)
+
+    @property
+    def universe(self) -> int | None:
+        if self.addresses:
+            return self.addresses[0].universe
+        return None
+
+    @property
+    def address(self) -> int | None:
+        if self.addresses:
+            return self.addresses[0].address
+        return None
+
+    def to_dict(self) -> dict[str, Any]:
+        d: dict[str, Any] = {
+            "name": self.name,
+            "uuid": self.uuid,
+        }
+        if self.gdtf_file:
+            d["gdtf_file"] = self.gdtf_file
+        if self.gdtf_mode:
+            d["gdtf_mode"] = self.gdtf_mode
+        d["transform"] = self.transform.to_dict()
+        if self.sources:
+            d["sources"] = [s.to_dict() for s in self.sources]
+        if self.addresses:
+            d["addresses"] = [a.to_dict() for a in self.addresses]
+        return d
+
+
+@dataclass
 class StageData:
     """Top-level container for all parsed stage data."""
 
@@ -235,6 +295,7 @@ class StageData:
     mvr_version: str = ""
     provider: str = ""
     fixtures: list[FixtureInfo] = field(default_factory=list)
+    video_screens: list[VideoScreenInfo] = field(default_factory=list)
 
     def fixtures_by_universe(self) -> dict[int, list[FixtureInfo]]:
         """Group fixtures by their primary universe."""
@@ -247,7 +308,7 @@ class StageData:
 
     def to_dict(self) -> dict[str, Any]:
         by_universe = self.fixtures_by_universe()
-        return {
+        d: dict[str, Any] = {
             "mvr_file": self.mvr_file,
             "mvr_version": self.mvr_version,
             "provider": self.provider,
@@ -257,3 +318,6 @@ class StageData:
             },
             "fixture_count": len(self.fixtures),
         }
+        if self.video_screens:
+            d["video_screens"] = [vs.to_dict() for vs in self.video_screens]
+        return d
